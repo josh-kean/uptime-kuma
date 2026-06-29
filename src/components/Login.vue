@@ -64,6 +64,15 @@
                     {{ $t("Login") }}
                 </button>
 
+                <button
+                    v-if="$root.showLogin"
+                    class="w-100 btn btn-normal mt-2"
+                    type="button"
+                    @click="$root.showLogin = false"
+                >
+                    {{ $t("Cancel") }}
+                </button>
+
                 <div v-if="res && !res.ok" class="alert alert-danger mt-3" role="alert">
                     {{ $t(res.msg) }}
                 </div>

@@ -38,6 +38,18 @@ const app = createApp({
 app.use(router);
 app.use(i18n);
 
+// Keep read-only (readonlyDashboard) sessions out of admin-only routes.
+// Defense-in-depth: the backend already rejects the underlying write events.
+const adminOnlyRoutePrefixes = [ "/edit", "/add", "/clone", "/settings", "/manage-status-page", "/maintenance" ];
+router.beforeEach((to, from, next) => {
+    const root = app._instance?.proxy;
+    if (root?.readonly && adminOnlyRoutePrefixes.some((prefix) => to.path.startsWith(prefix))) {
+        next("/dashboard");
+    } else {
+        next();
+    }
+});
+
 app.use(Toast, loadToastSettings());
 app.component("Editable", contenteditable);
 app.component("FontAwesomeIcon", FontAwesomeIcon);

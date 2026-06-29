@@ -33,7 +33,7 @@
             </a>
 
             <ul class="nav nav-pills">
-                <li v-if="$root.loggedIn" class="nav-item me-2">
+                <li v-if="$root.loggedIn && !$root.readonly" class="nav-item me-2">
                     <router-link to="/manage-status-page" class="nav-link">
                         <font-awesome-icon icon="stream" />
                         {{ $t("Status Pages") }}
@@ -45,7 +45,13 @@
                         {{ $t("Dashboard") }}
                     </router-link>
                 </li>
-                <li v-if="$root.loggedIn" class="nav-item">
+                <li v-if="$root.readonly" class="nav-item">
+                    <button class="btn btn-primary" @click="$root.showLogin = true">
+                        <font-awesome-icon icon="sign-in-alt" />
+                        {{ $t("Admin Login") }}
+                    </button>
+                </li>
+                <li v-if="$root.loggedIn && !$root.readonly" class="nav-item">
                     <div class="dropdown dropdown-profile-pic">
                         <div class="nav-link" data-bs-toggle="dropdown">
                             <div class="profile-pic">{{ $root.usernameFirstChar }}</div>
@@ -126,8 +132,8 @@
         </header>
 
         <main>
-            <router-view v-if="$root.loggedIn" />
-            <Login v-if="!$root.loggedIn && $root.allowLoginDialog" />
+            <router-view v-if="$root.loggedIn && !$root.showLogin" />
+            <Login v-if="(!$root.loggedIn && $root.allowLoginDialog) || $root.showLogin" />
         </main>
 
         <!-- Mobile Only -->
@@ -143,12 +149,12 @@
                 {{ $t("List") }}
             </router-link>
 
-            <router-link to="/add" class="nav-link">
+            <router-link v-if="!$root.readonly" to="/add" class="nav-link">
                 <div><font-awesome-icon icon="plus" /></div>
                 {{ $t("Add") }}
             </router-link>
 
-            <router-link to="/settings" class="nav-link">
+            <router-link v-if="!$root.readonly" to="/settings" class="nav-link">
                 <div><font-awesome-icon icon="cog" /></div>
                 {{ $t("Settings") }}
             </router-link>

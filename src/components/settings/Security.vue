@@ -103,6 +103,25 @@
                         {{ $t("Disable Auth") }}
                     </button>
                 </div>
+
+                <!-- Read-only Dashboard -->
+                <div v-if="!settings.disableAuth" class="mb-4">
+                    <div class="form-check form-switch">
+                        <input
+                            id="readonlyDashboard"
+                            class="form-check-input"
+                            type="checkbox"
+                            :checked="settings.readonlyDashboard !== false"
+                            @change="settings.readonlyDashboard = $event.target.checked; saveSettings()"
+                        />
+                        <label class="form-check-label" for="readonlyDashboard">
+                            {{ $t("Read-only Dashboard") }}
+                        </label>
+                    </div>
+                    <div class="form-text">
+                        {{ $t("readonlyDashboardDescription") }}
+                    </div>
+                </div>
             </div>
         </div>
 

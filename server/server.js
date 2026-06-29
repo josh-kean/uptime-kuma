@@ -386,7 +386,28 @@ let needSetup = false;
     });
 
     log.debug("server", "Adding socket handler");
+
+    // Socket events a read-only (readonlyDashboard) session is allowed to emit.
+    // Login events allow upgrading to a full admin session; the rest are the
+    // read-only data fetches the dashboard needs at runtime.
+    const readonlyAllowedEvents = new Set([
+        "login", "loginByToken", "logout",
+        "getMonitorList", "getMonitor", "getMonitorBeats", "getMonitorChartData",
+        "monitorImportantHeartbeatListCount", "monitorImportantHeartbeatListPaged",
+        "getPushExample", "getTags",
+    ]);
+
     io.on("connection", async (socket) => {
+        // Block any non-read socket event from read-only sessions (see readonlyDashboard setting).
+        // Fail-safe: only events on the allowlist are permitted while socket.isReadonly is true.
+        socket.use(([ event ], next) => {
+            if (socket.isReadonly && !readonlyAllowedEvents.has(event)) {
+                next(new Error("This instance is in read-only mode."));
+            } else {
+                next();
+            }
+        });
+
         await sendInfo(socket, true);
 
         if (needSetup) {
@@ -1748,6 +1769,12 @@ let needSetup = false;
             log.info("auth", "Disabled Auth: auto login to admin");
             await afterLogin(socket, await R.findOne("user"));
             socket.emit("autoLogin");
+        } else if (!needSetup && (await setting("readonlyDashboard")) !== false) {
+            // Read-only Dashboard is enabled by default; an admin must explicitly disable it.
+            // Skip during setup (no user exists yet) so we never auto-login a missing user.
+            log.info("auth", "Read-only Dashboard: auto login to read-only session");
+            await afterLogin(socket, await R.findOne("user"), true);
+            socket.emit("autoLogin", { readonly: true });
         } else {
             socket.emit("loginRequired");
             log.debug("auth", "need auth");
@@ -1819,10 +1846,12 @@ async function checkOwner(userID, monitorID) {
  * This function is used to send the heartbeat list of a monitor.
  * @param {Socket} socket Socket.io instance
  * @param {object} user User object
+ * @param {boolean} isReadonly Whether this is a read-only session (no write permission)
  * @returns {Promise<void>}
  */
-async function afterLogin(socket, user) {
+async function afterLogin(socket, user, isReadonly = false) {
     socket.userID = user.id;
+    socket.isReadonly = isReadonly;
     socket.join(user.id);
 
     let monitorList = await server.sendMonitorList(socket);

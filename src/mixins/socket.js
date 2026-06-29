@@ -41,6 +41,8 @@ export default {
             remember: localStorage.remember !== "0",
             allowLoginDialog: false, // Allowed to show login dialog, but "loggedIn" have to be true too. This exists because prevent the login dialog show 0.1s in first before the socket server auth-ed.
             loggedIn: false,
+            readonly: false, // Read-only dashboard session (no admin permissions)
+            showLogin: false, // Force-show the Login form (e.g. admin login from a read-only session)
             monitorList: {},
             monitorTypeList: {},
             maintenanceList: {},
@@ -127,11 +129,21 @@ export default {
                 this.$router.push("/setup");
             });
 
-            socket.on("autoLogin", (monitorID, data) => {
+            socket.on("autoLogin", (data) => {
                 this.loggedIn = true;
-                this.storage().token = "autoLogin";
-                this.socket.token = "autoLogin";
+                this.readonly = data?.readonly ?? false;
                 this.allowLoginDialog = false;
+
+                if (this.readonly) {
+                    // Read-only auto login: upgrade to a full session if a real admin token is stored
+                    let token = this.storage().token;
+                    if (token && token !== "autoLogin") {
+                        this.loginByToken(token);
+                    }
+                } else {
+                    this.storage().token = "autoLogin";
+                    this.socket.token = "autoLogin";
+                }
             });
 
             socket.on("loginRequired", () => {
@@ -426,6 +438,8 @@ export default {
                         this.storage().token = res.token;
                         this.socket.token = res.token;
                         this.loggedIn = true;
+                        this.readonly = false;
+                        this.showLogin = false;
                         this.username = this.getJWTPayload()?.username;
 
                         // Trigger Chrome Save Password
@@ -450,6 +464,8 @@ export default {
                     this.logout();
                 } else {
                     this.loggedIn = true;
+                    this.readonly = false;
+                    this.showLogin = false;
                     this.username = this.getJWTPayload()?.username;
                 }
             });

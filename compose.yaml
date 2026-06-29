@@ -1,6 +1,13 @@
 services:
   uptime-kuma:
-    image: louislam/uptime-kuma:2
+    # Build the local branch from source instead of pulling the public image.
+    # Dockerfile.local builds the frontend (dist) inside the image, so no host
+    # Node.js/npm is needed — only Docker. Everything is taken from your working
+    # tree / current branch.
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    image: uptime-kuma:local
     restart: unless-stopped
     volumes:
       - ./data:/app/data

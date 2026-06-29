@@ -1,0 +1,34 @@
+# Self-contained image for this fork.
+# Unlike docker/dockerfile (which copies a pre-built ./dist), this builds the
+# frontend INSIDE the image, so you only need Docker installed on the host
+# (no Node.js / npm on Windows required).
+
+############################################
+# Build stage: install all deps and build dist
+############################################
+FROM louislam/uptime-kuma:base2 AS build
+USER node
+WORKDIR /app
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+
+COPY --chown=node:node .npmrc package.json package-lock.json ./
+RUN npm ci
+
+COPY --chown=node:node . .
+RUN npm run build \
+    && npm prune --omit=dev
+
+############################################
+# Release stage
+############################################
+FROM louislam/uptime-kuma:base2 AS release
+WORKDIR /app
+
+ENV UPTIME_KUMA_IS_CONTAINER=1
+
+COPY --from=build /app /app
+
+EXPOSE 3001
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "server/server.js"]

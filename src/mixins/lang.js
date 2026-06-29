@@ -28,7 +28,12 @@ export default {
          * @returns {Promise<void>}
          */
         async changeLang(lang) {
-            let message = (await langModules["../lang/" + lang + ".json"]()).default;
+            const loader = langModules["../lang/" + lang + ".json"];
+            if (!loader) {
+                // Language file not bundled (English-only fork); stay on the fallback (en).
+                return;
+            }
+            let message = (await loader()).default;
             this.$i18n.setLocaleMessage(lang, message);
             this.$i18n.locale = lang;
             localStorage.locale = lang;

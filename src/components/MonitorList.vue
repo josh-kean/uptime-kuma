@@ -19,21 +19,23 @@
                 </div>
 
                 <div class="filters-group">
-                    <input
-                        v-if="!selectMode"
-                        v-model="selectMode"
-                        class="form-check-input"
-                        type="checkbox"
-                        :aria-label="$t('selectAllMonitorsAria')"
-                        @change="selectAll = selectMode"
-                    />
-                    <input
-                        v-else
-                        v-model="selectAll"
-                        class="form-check-input"
-                        type="checkbox"
-                        :aria-label="selectAll ? $t('deselectAllMonitorsAria') : $t('selectAllMonitorsAria')"
-                    />
+                    <template v-if="!$root.readonly">
+                        <input
+                            v-if="!selectMode"
+                            v-model="selectMode"
+                            class="form-check-input"
+                            type="checkbox"
+                            :aria-label="$t('selectAllMonitorsAria')"
+                            @change="selectAll = selectMode"
+                        />
+                        <input
+                            v-else
+                            v-model="selectAll"
+                            class="form-check-input"
+                            type="checkbox"
+                            :aria-label="selectAll ? $t('deselectAllMonitorsAria') : $t('selectAllMonitorsAria')"
+                        />
+                    </template>
 
                     <MonitorListFilter
                         :filterState="filterState"
